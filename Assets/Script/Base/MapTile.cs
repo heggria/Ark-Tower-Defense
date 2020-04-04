@@ -35,7 +35,7 @@ public class MapTile
         this.isBuildable = false;
         this.passableMask = 3;
         break;
-      case TileType.Wall:
+      case TileType.Hill:
         this.heightType = 1;
         this.isBuildable = true;
         this.passableMask = 2;
@@ -49,7 +49,7 @@ public enum TileType
   Start,//红门
   Floor,//能部署的地面
   Road,//不能部署的地面
-  Wall,//高台
+  Hill,//高台
   End,
   //Flystart,
   //TODO

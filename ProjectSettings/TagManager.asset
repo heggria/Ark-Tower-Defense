@@ -4,9 +4,10 @@
 TagManager:
   serializedVersion: 2
   tags:
-  - Enemy
   - OptControl
   - HillCube
+  - Char
+  - SearchRange
   layers:
   - Default
   - TransparentFX
@@ -17,8 +18,8 @@ TagManager:
   - 
   - 
   - MapCube
-  - Enemy
-  - Turret
+  - Char
+  - 
   - Bullet
   - SearchRange
   - 

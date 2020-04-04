@@ -17,11 +17,15 @@ public class CharcterData
   public string campId;
   // 职业
   public string profession;
-  // 部署位，0地面，1高台，2都可以，3都不可以
+  // 部署位
   public DeployPlace deployPlace;
-  // 攻击方式，3不攻击,0近战，1远程，2特殊
-  public AttackSytle damageType;
+  // 攻击方式
+  public AttackSytle attackSytle;
+  // 伤害类型
+  public DamageType damageType = DamageType.Physical;
+
   public Attributes attributes;
+
   public List<int> buffIdSet;// 临时保存拥有的buffId
 
   public CharcterData(int _id ,string _key ,bool _isEnemy,Attributes _attributes){
@@ -37,6 +41,13 @@ public enum AttackSytle{
   Remote,
   Special
 }
+
+public enum DamageType{
+  Physical,
+  Magic,
+  Real
+}
+
 public enum DeployPlace{
   Ground,
   Hill,

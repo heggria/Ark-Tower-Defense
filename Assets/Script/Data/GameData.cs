@@ -15,7 +15,8 @@ public class GameData
     {
       this.optDatas = TestOpt();
 
-      mapData = new MapData("test", 8, 8, new MapOptions(10, 1000), TestMapTile(), TestEnemy(), TestRoute(), TestWave());
+      mapData = new MapData("test", 8, 8, new MapOptions(10, 10), TestMapTile(), TestEnemy(), TestRoute(), TestWave());
+
     }
   }
   private bool IsRoad(Vector2 pos)
@@ -62,7 +63,7 @@ public class GameData
         else if (this.IsRoad(new Vector2(x, y)))
           mT.Add(new MapTile(x, y, TileType.Road));
         else
-          mT.Add(new MapTile(x, y, TileType.Wall));
+          mT.Add(new MapTile(x, y, TileType.Hill));
       }
     }
     return mT;
@@ -70,20 +71,29 @@ public class GameData
   private List<CharcterData> TestEnemy()
   {
     List<CharcterData> eD = new List<CharcterData>(new CharcterData[]{
-      new CharcterData(0,"Enemy1",true,new Attributes(150,20,0))
+      new CharcterData(0,"Enemy1",true,new Attributes(100000,20,0))
     });
+    eD[0].attributes.canMove = true;
+    eD[0].attributes.moveSpeed = 0.5f;
+    eD[0].attributes.def = 600;
+    eD[0].attributes.range = 0;
     return eD;
   }
   private List<CharcterData> TestOpt()
   {
     List<CharcterData> oD = new List<CharcterData>(new CharcterData[]{
-      new CharcterData(0,"StandardTurret",false,new Attributes(150,20,0))
+      new CharcterData(0,"StandardTurret",false,new Attributes(150,600,20)),
+      new CharcterData(1,"Box",false,new Attributes(2000,0,0))
     });
-    oD[0].attributes.range = 20;
+    oD[0].attributes.cost = 12;
+    oD[0].attributes.canAtk = true;
     oD[0].attributes.baseSearchTime = 0;
     oD[0].attributes.baseAttackTime = 0.25f;
     oD[0].attributes.baseAttackForwardTime = 0.1f;
+    oD[0].damageType = DamageType.Magic;
     oD[0].attributes.ballisticSpeed = 30;
+    oD[0].attributes.maxBlockCnt = 2;
+    oD[0].attributes.attackNum = 3;
     return oD;
 
   }
@@ -105,10 +115,10 @@ public class GameData
     List<Wave> waves = new List<Wave>(new Wave[]{
       new Wave("FIRST",0,5,new List<EnemyFragment>(new EnemyFragment[]{
         new EnemyFragment(0,new List<EnemyAction>(new EnemyAction[]{
-          new EnemyAction("Enemy1",0,20,4.5f,0),
-          new EnemyAction("Enemy1",1.5f,20,4,0),
-          new EnemyAction("Enemy1",3f,20,2.5f,0),
-          new EnemyAction("Enemy1",2.5f,20,3.5f,0),
+          new EnemyAction("Enemy1",0,20,2.5f,0),
+          //new EnemyAction("Enemy1",1.5f,20,4,0),
+          //new EnemyAction("Enemy1",3f,20,2.5f,0),
+          //new EnemyAction("Enemy1",2.5f,20,3.5f,0),
         })),
       })),/*
       new Wave("FIRST",0,30,new List<EnemyFragment>(new EnemyFragment[]{

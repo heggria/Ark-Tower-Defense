@@ -18,7 +18,8 @@ public class RangeRunning : MonoBehaviour
   //敌人进入碰撞体事件
   void OnTriggerEnter(Collider col)
   {
-    if (col.tag == "Enemy")
+    //Debug.Log(col.tag);
+    if (col.tag == "Char" && col.GetComponent<CharManager>().originalData.isEnemy != gameObject.GetComponentInParent<CharManager>().originalData.isEnemy)
     {
       Enemy enemy = new Enemy(col.gameObject, enemies.Count);
       enemies.Add(enemy);
@@ -27,7 +28,7 @@ public class RangeRunning : MonoBehaviour
   //敌人离开碰撞体事件
   void OnTriggerExit(Collider col)
   {
-    if (col.tag == "Enemy")
+    if (col.tag == "Char" && col.GetComponent<CharManager>().originalData.isEnemy != gameObject.GetComponentInParent<CharManager>().originalData.isEnemy)
     {
       int offesst = 0;
       for (int i = 0; i < enemies.Count; i++)
@@ -64,8 +65,9 @@ public class RangeRunning : MonoBehaviour
         emptyIndex.Add(index);
     for (int i = 0; i < emptyIndex.Count; i++)
       enemies.RemoveAt(emptyIndex[i] - i);
-    foreach(Enemy enemy in enemies){
-      enemy.distance = enemy.enemy.GetComponentInParent<StatusManager>().distanceToEnd;
+    foreach (Enemy enemy in enemies)
+    {
+      enemy.distance = enemy.enemy.GetComponentInParent<CharManager>().distanceToEnd;
     }
     SortByDistance();
   }

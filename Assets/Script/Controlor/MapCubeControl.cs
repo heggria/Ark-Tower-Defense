@@ -14,11 +14,14 @@ public class MapCubeControl : MonoBehaviour
   {
     deployedOptData = null;
   }
-  public void OptSet(GameObject optPerfab, CharcterData deployedOptData)
+  public void OptSet(GameObject charConstructor, GameObject optPerfab, CharcterData optData)
   {
-    GameObject deployedOpt = GameObject.Instantiate(optPerfab, new Vector3(transform.position.x, GameManager.optHeight, transform.position.z), Quaternion.identity);
-    object[] message = new object[] { deployedOptData };
-    deployedOpt.SendMessage("SetOpt", message);
+    deployedOptData = optData;
+    GameObject charC = GameObject.Instantiate(charConstructor, new Vector3(transform.position.x, GameManager.optHeight, transform.position.z), Quaternion.identity);
+    GameObject optI = GameObject.Instantiate(optPerfab, charC.transform.position, Quaternion.identity);
+    optI.transform.parent = charC.transform;
+    object[] message = new object[] { optI, optData };
+    charC.SendMessage("SetOpt", message);
     GameObject effect = GameObject.Instantiate(BuildEffect, transform.position, Quaternion.identity);
     Destroy(effect, 1);
   }
@@ -26,7 +29,7 @@ public class MapCubeControl : MonoBehaviour
   {
     if (!EventSystem.current.IsPointerOverGameObject())
     {
-      if (deployedOptData != null)
+      if (deployedOptData == null)
       {
         switch (type)
         {
@@ -37,6 +40,10 @@ public class MapCubeControl : MonoBehaviour
             GetComponentInChildren<Renderer>().material.color = Color.gray;
             break;
         }
+      }
+      else
+      {
+        GetComponentInChildren<Renderer>().material.color = Color.green;
       }
     }
   }

@@ -4,11 +4,15 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class UIManager : MonoBehaviour{
-  public Text lifePoint;
-  public Text costText;
-  void Update(){
-    lifePoint.text = GameManager.options.lifePoint.ToString();
-    costText.text = GameManager.options.nowCost.ToString();
+public class UIManager : MonoBehaviour
+{
+  public Text lifePointCount;
+  public Text costCount;
+  public Text killEnemyCount;
+  void Update()
+  {
+    lifePointCount.text = GameManager.options.lifePoint.ToString();
+    costCount.text = GameManager.options.nowCost.ToString();
+    killEnemyCount.text = GameManager.options.killEnemy.ToString()+"/"+GameManager.options.totalEnemy.ToString();
   }
 }

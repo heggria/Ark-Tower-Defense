@@ -23,15 +23,30 @@ public class MapData
     this.enemyDatas = _enemyDatas;
     this.routeDatas = _routeDatas;
     this.waveDatas = _waveDatas;
+    this.options.totalEnemy = CountEnemy();
+  }
+  private int CountEnemy(){
+    int total = 0;
+    foreach(Wave wave in waveDatas){
+      foreach(EnemyFragment enemyFragment in wave.enemyFragments){
+        foreach(EnemyAction enemyAction in enemyFragment.enemyActions){
+          total+=enemyAction.count;
+        }
+      }
+    }
+    return total;
   }
 }
 public class MapOptions
 {
   //public int characterLimit;
   public int lifePoint = 10;
-  public int nowCost = 1000;
+  public int totalEnemy;
+  public int killEnemy = 0;
+  public int nowCost = 10;
   public int countEnemyAlive = 0;
-  //public int maxCost;
+  public int spawnBeginTime = 0;
+  public int maxCost = 99;
   public float costIncreaseTime = 1;// cost增加1的时间
   public float moveMultiplier = 0.5f;// 控制移动速度
   public MapOptions(int _lifePoint, int _nowCost)
