@@ -18,17 +18,21 @@ public class CharManager : MonoBehaviour
   public Transform head;
   public Transform firePosition;
   public GameObject bulletPrefab;
+  public GameObject perfab;
 
   private RangeRunning range;
   private float attackTimer = 0;
   private float moveTimer = 0;
   private AttackStatus attackStatus = AttackStatus.STOP;
   private MoveStatus moveStatus = MoveStatus.WAIT;
-  private MoveStatus enemyMoveStatus = MoveStatus.MOVE;
+  private BlockStatus blockStatus = BlockStatus.NONE;
 
-  public GameObject perfab;
 
   public List<GameObject> blockEnemies = new List<GameObject>();
+  public List<Enemy> enemies;
+  public List<GameObject> attackEnemies = new List<GameObject>();
+
+  private int attackEnemyCount = 0;
 
   // 敌人专用
   [HideInInspector]
@@ -46,61 +50,149 @@ public class CharManager : MonoBehaviour
   }
   void Update()
   {
+    // 设置攻击范围
+    range.SetRadius(runningData.attributes.range);
     if (originalData != null)
     {
-      if (originalData.attributes.canAtk)
+      if (originalData.perfabSetting.canAtk)
         AttackStatusMachine();
-      if (originalData.attributes.canMove)
+      if (originalData.perfabSetting.canMove)
         MoveStatusMachine();
       UpdateBlockEnemies();
     }
   }
+  // 攻击状态机
   private void AttackStatusMachine()
   {
-    range.SetRadius(runningData.attributes.range);
-    // 如果范围内第一次出现敌人
-    if (range.enemies.Count > 0)
+    // Debug.Log(attackStatus);
+    // 计时
+    attackTimer += Time.deltaTime;
+    if (runningData.attributes.attackNum > 0)
     {
-      if (range.enemies.Count > 0 && range.enemies[0].enemy != null)
+      // 如果范围内有敌人
+      if (enemies.Count > 0)
       {
-        Vector3 targetPosition = range.enemies[0].enemy.transform.position;
-        targetPosition.y = head.position.y;
-        head.LookAt(targetPosition);
-      }
-      attackTimer += Time.deltaTime;
-      switch (attackStatus)
-      {
-        case AttackStatus.STOP:
-          attackStatus = AttackStatus.SEARCH_ENEMY;
-          break;
-        case AttackStatus.SEARCH_ENEMY:
-          if (attackTimer >= runningData.attributes.baseSearchTime)
+        if (attackStatus != AttackStatus.AFTER_ATTACK)
+        {
+          // 状态判断
+          switch (attackStatus)
           {
-            attackTimer = 0;
-            attackStatus = AttackStatus.BEFORE_ATTACK;
+            case AttackStatus.STOP:
+              // 如果是STOP，进入SEARCH_ENEMY
+              attackTimer = 0;
+              attackStatus = AttackStatus.SEARCH_ENEMY;
+              break;
+            case AttackStatus.SEARCH_ENEMY:
+              // SEARCH_ENEMY计时结束，进入BEFORE_ATTACK，保存当前敌人数组
+              if (attackTimer >= runningData.attributes.baseSearchTime)
+              {
+                attackTimer = 0;
+                attackStatus = AttackStatus.CONFIRM_ENEMY;
+              }
+              break;
+            case AttackStatus.CONFIRM_ENEMY:
+              attackTimer = 0;
+              // 重置锁定enemy数组
+              attackEnemies = new List<GameObject>();
+              // 计算应该攻击的敌人数
+              CountAttackEnemyNum();
+              // 保存抬手结束时的敌人数组（锁定）
+              for (int i = 0; i < attackEnemyCount; i++)
+              {
+                if (blockEnemies.Count > 0)
+                {
+                  if (i < blockEnemies.Count)
+                    attackEnemies.Add(blockEnemies[i]);
+                  else
+                    for (int j = 0; j < blockEnemies.Count; j++)
+                    {
+                      if (enemies[i - blockEnemies.Count].enemy == blockEnemies[j])
+                        break;
+                      else if (j == blockEnemies.Count - 1)
+                      {
+                        attackEnemies.Add(enemies[i - blockEnemies.Count].enemy);
+                      }
+                    }
+
+                }
+                else
+                  attackEnemies.Add(enemies[i - blockEnemies.Count].enemy);
+              }
+              attackStatus = AttackStatus.BEFORE_ATTACK;
+              break;
+            case AttackStatus.BEFORE_ATTACK:
+              // 持续检测锁定的敌人是否仍然存在（目前只考虑第一个敌人即主目标）
+              // 不存在就重置前摇
+              if (attackEnemies[0] == null)
+                attackStatus = AttackStatus.CONFIRM_ENEMY;
+
+              // BEFORE_ATTACK计时结束，进入AFTER_ATTACK
+              if (attackTimer >= runningData.attributes.baseAttackForwardTime)
+              {
+                attackTimer = 0;
+                for (int i = 0; i < attackEnemyCount; i++)
+                  Attack(attackEnemies[i]);
+                attackStatus = AttackStatus.AFTER_ATTACK;
+              }
+              break;
+            case AttackStatus.AFTER_ATTACK:
+              break;
           }
-          break;
-        case AttackStatus.BEFORE_ATTACK:
-          if (attackTimer >= runningData.attributes.baseAttackForwardTime)
-          {
-            attackTimer = 0;
-            Attack();
-            attackStatus = AttackStatus.AFTER_ATTACK;
-          }
-          break;
-        case AttackStatus.AFTER_ATTACK:
+        }
+        // 有敌人的后摇
+        else
+        {/*
+          // 阻挡开始，重置普攻
+          if (moveStatus == MoveStatus.BLOCKSTART)
+            attackStatus = AttackStatus.CONFIRM_ENEMY;
+          */
+          // Debug.Log(attackStatus);
           if (attackTimer >= runningData.attributes.baseAttackTime - runningData.attributes.baseAttackForwardTime)
           {
             attackTimer = 0;
-            attackStatus = AttackStatus.BEFORE_ATTACK;
+            attackStatus = AttackStatus.CONFIRM_ENEMY;
           }
-          break;
+        }
+        // 物体头部转动，指向敌人数组第一个
+        if (originalData.perfabSetting.hasHead && attackEnemies.Count > 0 && attackEnemies[0] != null)
+        {
+          Vector3 targetPosition = attackEnemies[0].transform.position;
+          targetPosition.y = head.position.y;
+          head.LookAt(targetPosition);
+        }
       }
+      // 没有敌人的后摇
+      else if (attackStatus == AttackStatus.AFTER_ATTACK)
+      {
+        if (attackTimer >= runningData.attributes.baseAttackTime - runningData.attributes.baseAttackForwardTime)
+        {
+          attackTimer = 0;
+          attackStatus = AttackStatus.STOP;
+        }
+      }
+    }
+  }
+  // 计算应该打的敌人个数
+  private void CountAttackEnemyNum()
+  {
+    attackEnemyCount = 0;
+    // 先计算阻挡
+    if (blockEnemies.Count > 0)
+    {
+      if (blockEnemies.Count < runningData.attributes.attackNum)
+      {
+        attackEnemyCount = blockEnemies.Count;
+        if (enemies.Count < runningData.attributes.attackNum - attackEnemyCount)
+          attackEnemyCount += enemies.Count;
+        else attackEnemyCount = runningData.attributes.attackNum;// 满了
+      }
+      else attackEnemyCount = runningData.attributes.attackNum;// 满了
     }
     else
     {
-      attackTimer = 0;
-      attackStatus = AttackStatus.STOP;
+      if (enemies.Count < runningData.attributes.attackNum)
+        attackEnemyCount = enemies.Count;
+      else attackEnemyCount = runningData.attributes.attackNum;// 满了
     }
   }
   private void MoveStatusMachine()
@@ -109,113 +201,74 @@ public class CharManager : MonoBehaviour
     switch (moveStatus)
     {
       case MoveStatus.WAIT:
+        if (route == null) break;
+        else if (moveTimer >= waitTime)
         {
-          if (route == null) break;
-          else if (moveTimer >= waitTime)
-          {
-            if (originalData.isEnemy)
-              perfab.SetActive(true);
+          if (originalData.isEnemy)
+            perfab.SetActive(true);
 
-            moveTimer = 0;
-            moveStatus = MoveStatus.MOVE;
-            gameObject.GetComponent<SphereCollider>().enabled = true;
-          }
+          moveTimer = 0;
+          moveStatus = MoveStatus.MOVE;
+          gameObject.GetComponent<SphereCollider>().enabled = true;
         }
         break;
       case MoveStatus.MOVE:
         {
-          if (nextPointIndex != route.checkpoints.Count)
-          {
-            Vector3 pos3d = Math.Ve2ToVe3(route.checkpoints[nextPointIndex].position * GameManager.space, GameManager.enemyHeight);
-            if (Vector3.Distance(pos3d, transform.position) > reserve)
+          if (blockStatus != BlockStatus.BLOCKING)
+            if (nextPointIndex != route.checkpoints.Count)
             {
-              transform.Translate((pos3d - transform.position).normalized * Time.deltaTime * runningData.attributes.moveSpeed * magnification);
-            }
-            else if (enemyMoveStatus == MoveStatus.STOP)
-            {
-              moveStatus = MoveStatus.STOP;
-            }
-            else
-            {
-              moveTimer = 0;
-              moveStatus = MoveStatus.STOP;
-            }
-          }
-          else
-          {
-            if (Vector3.Distance(endPos3d, transform.position) > reserve)
-            {
-              transform.Translate((endPos3d - transform.position).normalized * Time.deltaTime * runningData.attributes.moveSpeed * magnification);
+              Vector3 pos3d = Math.Ve2ToVe3(route.checkpoints[nextPointIndex].position * GameManager.space, GameManager.enemyHeight);
+              if (Vector3.Distance(pos3d, transform.position) > reserve)
+              {
+                transform.Translate((pos3d - transform.position).normalized * Time.deltaTime * runningData.attributes.moveSpeed * magnification);
+              }
+              else
+              {
+                moveTimer = 0;
+                moveStatus = MoveStatus.AUTOSTOP;
+              }
             }
             else
             {
-              moveTimer = 0;
-              moveStatus = MoveStatus.DEAD;
+              if (Vector3.Distance(endPos3d, transform.position) > reserve)
+              {
+                transform.Translate((endPos3d - transform.position).normalized * Time.deltaTime * runningData.attributes.moveSpeed * magnification);
+              }
+              else
+              {
+                moveTimer = 0;
+                moveStatus = MoveStatus.INTOPOINT;
+              }
             }
-          }
           break;
         }
-      case MoveStatus.STOP:
-        enemyMoveStatus = MoveStatus.STOP;
+      case MoveStatus.AUTOSTOP:
         if (moveTimer >= route.checkpoints[nextPointIndex].stopTime)
         {
           moveTimer = 0;
           nextPointIndex++;
           moveStatus = MoveStatus.MOVE;
-          enemyMoveStatus = MoveStatus.MOVE;
         }
         break;
-      case MoveStatus.BLOCK:
-        if (!originalData.isEnemy)
-        {
-        }
-        else
-        {
-
-        }
-        break;
-      case MoveStatus.DEAD:
+      case MoveStatus.INTOPOINT:
         GameManager.options.lifePoint--;
         GameObject.Destroy(gameObject);
         break;
     }
-    CountDistanceToEnd();
+    if (originalData.isEnemy)
+      CountDistanceToEnd();
   }
-  private void Attack()
+
+
+  private void Attack(GameObject enemy)
   {
-    int remainAtkNum = runningData.attributes.attackNum;
-    for (int i = 0; i < blockEnemies.Count; i++)
-    {
-      if (remainAtkNum > 0)
-      {
-        GameObject bullet = GameObject.Instantiate(bulletPrefab, firePosition.position, firePosition.rotation);
-        bullet.SetActive(true);
-        object[] message = new object[] { runningData, blockEnemies[i] };
-        bullet.SendMessage("InitBullet", message);
-        remainAtkNum--;
-      }
-      else break;
-    }
-    if (remainAtkNum > 0)
-    {
-      // 攻击先进入攻击范围/攻击先上场 看情况
-      int flag = 0;
-      if (range.enemies.Count <= remainAtkNum)
-        flag = range.enemies.Count;
-      else
-        flag = remainAtkNum;
-      for (int i = 0; i < flag; i++)
-      {
-        GameObject bullet = GameObject.Instantiate(bulletPrefab, firePosition.position, firePosition.rotation);
-        bullet.SetActive(true);
-        object[] message = new object[] { runningData, range.enemies[i].enemy };
-        bullet.SendMessage("InitBullet", message);
-      }
-    }
+    GameObject bullet = GameObject.Instantiate(bulletPrefab, firePosition.position, firePosition.rotation);
+    bullet.SetActive(true);
+    object[] message = new object[] { runningData, enemy };
+    bullet.SendMessage("InitBullet", message);
   }
   public void GetDamage(float damage, DamageType damageType)
   {
-    // Debug.Log(1);
     if (runningData.attributes.maxHp <= 0) return;
     CountDamage(damage, damageType);
     SetHpSilder(runningData.attributes.maxHp / originalData.attributes.maxHp, true);
@@ -243,26 +296,9 @@ public class CharManager : MonoBehaviour
   {
     perfab = (GameObject)obj[0];
     originalData = (CharcterData)obj[1];
-    runningData = Math.DeepCopyByBinary<CharcterData>(originalData);
     InitCharManager();
-    foreach (Transform child in perfab.GetComponentsInChildren<Transform>(true))
-    {
-      if (child.gameObject.name == "FirePosition")
-      {
-        firePosition = child.gameObject.transform;
-      }
-      else if (child.gameObject.name == "Head")
-      {
-        head = child.gameObject.transform;
-      }
-      else if (child.gameObject.name == "Bullet")
-      {
-        bulletPrefab = child.gameObject;
-      }
-    }
     gameObject.GetComponent<SphereCollider>().enabled = true;
     gameObject.GetComponent<SphereCollider>().isTrigger = false;
-    bulletPrefab.SetActive(false);
   }
   void CountDamage(float damage, DamageType damageType)
   {
@@ -325,8 +361,40 @@ public class CharManager : MonoBehaviour
     this.runningData = Math.DeepCopyByBinary<CharcterData>(this.originalData);
     // 获取攻击范围组件
     range = gameObject.GetComponentInChildren<RangeRunning>();
+    // 绑定范围敌人数组
+    enemies = range.enemies;
     // 血条组件已经初始化，可以直接调用
     SetHpSilder(runningData.attributes.maxHp / originalData.attributes.maxHp, true);
+    foreach (Transform child in perfab.GetComponentsInChildren<Transform>(true))
+    {
+      if (child.gameObject.name == "FirePosition")
+      {
+        firePosition = child.gameObject.transform;
+      }
+      else if (child.gameObject.name == "Head")
+      {
+        head = child.gameObject.transform;
+      }
+      else if (child.gameObject.name == "Bullet")
+      {
+        bulletPrefab = child.gameObject;
+      }
+    }
+    bulletPrefab.SetActive(false);
+  }
+
+  private void BlockStart()
+  {
+    if (attackStatus == AttackStatus.AFTER_ATTACK)
+    {
+      if (originalData.isEnemy)
+        attackStatus = AttackStatus.CONFIRM_ENEMY;
+      else
+      {
+
+      }
+    }
+    blockStatus = BlockStatus.BLOCKING;
   }
 
   void OnTriggerEnter(Collider col)
@@ -341,12 +409,12 @@ public class CharManager : MonoBehaviour
         if (originalData.isEnemy)
         {
           // 敌人如果处于阻挡状态，直接跳过
-          if (moveStatus == MoveStatus.BLOCK)
+          if (blockStatus == BlockStatus.BLOCKING)
             return;
           // 如果不是阻挡状态，判断能不能阻挡，干员当前阻挡-敌人最大阻挡大于 0
           else if (other.runningData.attributes.supplyBlockCnt - runningData.attributes.maxBlockCnt >= 0)
           {
-            moveStatus = MoveStatus.BLOCK;
+            BlockStart();
             blockEnemies.Add(col.GetComponent<Transform>().gameObject);
             //Debug.Log(blockEnemies[0].GetComponent<CharManager>());
             // 敌人阻挡数不用变
@@ -358,10 +426,10 @@ public class CharManager : MonoBehaviour
           if (runningData.attributes.supplyBlockCnt - other.runningData.attributes.maxBlockCnt >= 0)
           {
             //Debug.Log(other.runningData.attributes.supplyBlockCnt);
-            moveStatus = MoveStatus.BLOCK;
+            BlockStart();
             blockEnemies.Add(col.GetComponent<Transform>().gameObject);
           }
-          Debug.Log(blockEnemies.Count);
+          // Debug.Log(blockEnemies.Count);
         }
       }
     }
@@ -406,15 +474,14 @@ public class CharManager : MonoBehaviour
   void BlockCancel(Object[] obj)
   {
     blockEnemies = new List<GameObject>();
-    // 如果是敌人，阻挡数组没有敌人时移动，干员切换到WAIT;
-    if (originalData.isEnemy && moveStatus != MoveStatus.WAIT)
-      moveStatus = enemyMoveStatus;
+    blockStatus = BlockStatus.NONE;
   }
 }
 public enum AttackStatus
 {
   STOP,// 停止攻击
   SEARCH_ENEMY,// 攻击抬手
+  CONFIRM_ENEMY,// 锁定敌人
   BEFORE_ATTACK,// 攻击前摇
   AFTER_ATTACK,// 攻击后摇
 }
@@ -422,7 +489,12 @@ public enum MoveStatus
 {
   WAIT,// 等待时间
   MOVE,// 主动移动
-  BLOCK,// 阻挡
-  STOP,// 暂停移动
-  DEAD// 死亡
+  AUTOSTOP,// 自动暂停
+  ATTACKSTOP,// 攻击暂停
+  INTOPOINT// 死亡
+}
+public enum BlockStatus
+{
+  NONE,
+  BLOCKING,
 }

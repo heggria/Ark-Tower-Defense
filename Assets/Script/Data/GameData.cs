@@ -15,7 +15,7 @@ public class GameData
     {
       this.optDatas = TestOpt();
 
-      mapData = new MapData("test", 8, 8, new MapOptions(10, 10), TestMapTile(), TestEnemy(), TestRoute(), TestWave());
+      mapData = new MapData("test", 8, 8, new MapOptions(10, 50), TestMapTile(), TestEnemy(), TestRoute(), TestWave());
 
     }
   }
@@ -71,29 +71,36 @@ public class GameData
   private List<CharcterData> TestEnemy()
   {
     List<CharcterData> eD = new List<CharcterData>(new CharcterData[]{
-      new CharcterData(0,"Enemy1",true,new Attributes(100000,20,0))
+      new CharcterData(0,"Enemy1",true,new Attributes(10000,200,0))
     });
-    eD[0].attributes.canMove = true;
+
     eD[0].attributes.moveSpeed = 0.5f;
     eD[0].attributes.def = 600;
-    eD[0].attributes.range = 0;
+    eD[0].attributes.range = 10;
+
+    eD[0].perfabSetting.canMove = true;
+    eD[0].perfabSetting.hasBulletEffect = false;
+    eD[0].perfabSetting.canAtk = false;
+    eD[0].perfabSetting.ballisticSpeed = 10;
     return eD;
   }
   private List<CharcterData> TestOpt()
   {
     List<CharcterData> oD = new List<CharcterData>(new CharcterData[]{
-      new CharcterData(0,"StandardTurret",false,new Attributes(150,600,20)),
+      new CharcterData(0,"StandardTurret",false,new Attributes(2000,500,20)),
       new CharcterData(1,"Box",false,new Attributes(2000,0,0))
     });
-    oD[0].attributes.cost = 12;
-    oD[0].attributes.canAtk = true;
+    oD[0].attributes.cost = 8;
     oD[0].attributes.baseSearchTime = 0;
-    oD[0].attributes.baseAttackTime = 0.25f;
-    oD[0].attributes.baseAttackForwardTime = 0.1f;
+    oD[0].attributes.baseAttackTime = 0.5f;
+    oD[0].attributes.baseAttackForwardTime = 0.5f;
     oD[0].damageType = DamageType.Magic;
-    oD[0].attributes.ballisticSpeed = 30;
     oD[0].attributes.maxBlockCnt = 2;
-    oD[0].attributes.attackNum = 3;
+    oD[0].attributes.attackNum = 1;
+
+    oD[0].perfabSetting.canAtk = true;
+    oD[0].perfabSetting.ballisticSpeed = 30;
+    oD[0].perfabSetting.hasHead = true;
     return oD;
 
   }

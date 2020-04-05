@@ -22,11 +22,7 @@ public class Attributes {
   public int supplyBlockCnt = 1;// 可以提供多少阻挡
 
   public float range = 20;//攻击距离
-  public float ballisticSpeed = 1;// 弹道速度
-  public float colliderSize = 1;// 碰撞模型大小，统一球形
   public int attackNum = 1;// 攻击个数
-  public bool canAtk = false;// 是否可以攻击
-  public bool canMove = false;// 是否可以移动
 
   public Attributes(float maxHp,float atk,float range){
     this.maxHp = maxHp;

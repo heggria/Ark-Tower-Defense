@@ -8,7 +8,7 @@ public class BulletRunning : MonoBehaviour
   private GameObject target;
   // private bool targetIsEnemy = true;
   private CharcterData charRunningData;
-  private int attackNum = 1;
+  public int attackNum = 1;
 
   void Update()
   {
@@ -18,7 +18,7 @@ public class BulletRunning : MonoBehaviour
       {
         //Debug.Log(optData.attributes.ballisticSpeed);
         transform.LookAt(target.transform.position);
-        transform.Translate(Vector3.forward * charRunningData.attributes.ballisticSpeed * Time.deltaTime);
+        transform.Translate(Vector3.forward * charRunningData.perfabSetting.ballisticSpeed * Time.deltaTime);
       }
       else
       {
@@ -31,13 +31,16 @@ public class BulletRunning : MonoBehaviour
   // 击中任何敌人都向敌人发送一个damage消息,同时自身销毁
   void OnTriggerEnter(Collider col)
   {
+    Debug.Log(1);
     if (col.tag == "Char" && attackNum > 0)
+    {
       if (charRunningData.isEnemy != col.GetComponent<CharManager>().originalData.isEnemy)
       {
         attackNum--;
-        col.GetComponent<CharManager>().GetDamage(CauseDamage(),charRunningData.damageType);
+        col.GetComponent<CharManager>().GetDamage(CauseDamage(), charRunningData.damageType);
         Die();
       }
+    }
   }
   void InitBullet(object[] obj)
   {
@@ -46,11 +49,15 @@ public class BulletRunning : MonoBehaviour
   }
   private void Die()
   {
-    GameObject effect = GameObject.Instantiate(explosionEffectPrefab, transform.position, transform.rotation);
-    Destroy(effect, 0.5f);
+    if (charRunningData.perfabSetting.hasBulletEffect)
+    {
+      GameObject effect = GameObject.Instantiate(explosionEffectPrefab, transform.position, transform.rotation);
+      Destroy(effect, 0.5f);
+    }
     Destroy(this.gameObject);
   }
-  private float CauseDamage(){
+  private float CauseDamage()
+  {
     return charRunningData.attributes.atk;
   }
 }

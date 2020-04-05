@@ -28,12 +28,32 @@ public class CharcterData
 
   public List<int> buffIdSet;// 临时保存拥有的buffId
 
+  public PerfabSetting perfabSetting = new PerfabSetting();
+
   public CharcterData(int _id ,string _key ,bool _isEnemy,Attributes _attributes){
     this.key = _key;
     this.id = _id;
     this.isEnemy = _isEnemy;
     this.attributes = _attributes;
   }
+}
+[System.Serializable]
+public class PerfabSetting{
+  public bool hasHead = false;
+  public bool hasBulletEffect = true;
+
+  public BulletType bulletType = BulletType.BOTH;// 弹道与弹体
+  public float ballisticSpeed = 1;// 弹道速度
+
+  public float colliderSize = 1;// 碰撞模型大小，统一球形
+  public bool canAtk = false;// 是否可以攻击
+  public bool canMove = false;// 是否可以移动
+}
+public enum BulletType{
+  NONE,
+  TRAJECTORY,
+  PROJECTILE,
+  BOTH
 }
 public enum AttackSytle{
   None,
