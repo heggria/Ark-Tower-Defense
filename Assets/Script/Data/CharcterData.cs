@@ -39,15 +39,23 @@ public class CharcterData
 }
 [System.Serializable]
 public class PerfabSetting{
+  public BulletSetting bullet1 = new BulletSetting();
+
   public bool hasHead = false;
-  public bool hasBulletEffect = true;
-
-  public BulletType bulletType = BulletType.BOTH;// 弹道与弹体
-  public float ballisticSpeed = 1;// 弹道速度
-
   public float colliderSize = 1;// 碰撞模型大小，统一球形
   public bool canAtk = false;// 是否可以攻击
   public bool canMove = false;// 是否可以移动
+}
+[System.Serializable]
+public class BulletSetting{
+  public BulletType bulletType = BulletType.NONE;// 弹道与弹体
+  public bool hasEffect = false;
+  public bool lockEnemy = false;// 锁定敌人，即中心到达敌人位置才进行碰撞判定
+  public int maxDamageCount = 1;// 区别于AttackNum，是弹体的最大攻击个数，-1为范围内全部伤害
+  public int bulletSize = 1;// 弹体的大小
+  public float ballisticSpeed = 1;// 弹道速度
+  public float delay = 1f;// 伤害判定延迟
+  public bool followEnemy = false;// 跟随敌人
 }
 public enum BulletType{
   NONE,

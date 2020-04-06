@@ -77,6 +77,12 @@ public class RangeRunning : MonoBehaviour
   {
     Math.SortFromSmallToBig(enemies, 0, enemies.Count - 1);
   }
+  public bool SearchEnemy(GameObject target){
+    for(int i = 0;i<enemies.Count;i++){
+      if(target == enemies[i].enemy) return true;
+    }
+    return false;
+  }
 }
 public class Enemy
 {

@@ -79,9 +79,9 @@ public class GameData
     eD[0].attributes.range = 10;
 
     eD[0].perfabSetting.canMove = true;
-    eD[0].perfabSetting.hasBulletEffect = false;
+    eD[0].perfabSetting.bullet1.hasEffect = false;
     eD[0].perfabSetting.canAtk = false;
-    eD[0].perfabSetting.ballisticSpeed = 10;
+    eD[0].perfabSetting.bullet1.ballisticSpeed = 10;
     return eD;
   }
   private List<CharcterData> TestOpt()
@@ -92,14 +92,17 @@ public class GameData
     });
     oD[0].attributes.cost = 8;
     oD[0].attributes.baseSearchTime = 0;
-    oD[0].attributes.baseAttackTime = 0.5f;
-    oD[0].attributes.baseAttackForwardTime = 0.5f;
+    oD[0].attributes.baseAttackTime = 2.8f;
+    oD[0].attributes.baseAttackForwardTime = 1f;
     oD[0].damageType = DamageType.Magic;
     oD[0].attributes.maxBlockCnt = 2;
     oD[0].attributes.attackNum = 1;
 
     oD[0].perfabSetting.canAtk = true;
-    oD[0].perfabSetting.ballisticSpeed = 30;
+    oD[0].perfabSetting.bullet1.maxDamageCount = 10;
+    oD[0].perfabSetting.bullet1.bulletType = BulletType.PROJECTILE;
+    oD[0].perfabSetting.bullet1.ballisticSpeed = 10;
+    oD[0].perfabSetting.bullet1.lockEnemy = true;
     oD[0].perfabSetting.hasHead = true;
     return oD;
 

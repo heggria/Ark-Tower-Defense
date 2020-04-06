@@ -18,6 +18,7 @@ public class CharManager : MonoBehaviour
   public Transform head;
   public Transform firePosition;
   public GameObject bulletPrefab;
+  public GameObject laserPerfab;
   public GameObject perfab;
 
   private RangeRunning range;
@@ -141,11 +142,7 @@ public class CharManager : MonoBehaviour
         }
         // 有敌人的后摇
         else
-        {/*
-          // 阻挡开始，重置普攻
-          if (moveStatus == MoveStatus.BLOCKSTART)
-            attackStatus = AttackStatus.CONFIRM_ENEMY;
-          */
+        {
           // Debug.Log(attackStatus);
           if (attackTimer >= runningData.attributes.baseAttackTime - runningData.attributes.baseAttackForwardTime)
           {
@@ -172,29 +169,7 @@ public class CharManager : MonoBehaviour
       }
     }
   }
-  // 计算应该打的敌人个数
-  private void CountAttackEnemyNum()
-  {
-    attackEnemyCount = 0;
-    // 先计算阻挡
-    if (blockEnemies.Count > 0)
-    {
-      if (blockEnemies.Count < runningData.attributes.attackNum)
-      {
-        attackEnemyCount = blockEnemies.Count;
-        if (enemies.Count < runningData.attributes.attackNum - attackEnemyCount)
-          attackEnemyCount += enemies.Count;
-        else attackEnemyCount = runningData.attributes.attackNum;// 满了
-      }
-      else attackEnemyCount = runningData.attributes.attackNum;// 满了
-    }
-    else
-    {
-      if (enemies.Count < runningData.attributes.attackNum)
-        attackEnemyCount = enemies.Count;
-      else attackEnemyCount = runningData.attributes.attackNum;// 满了
-    }
-  }
+
   private void MoveStatusMachine()
   {
     moveTimer += Time.deltaTime;
@@ -259,13 +234,62 @@ public class CharManager : MonoBehaviour
       CountDistanceToEnd();
   }
 
-
-  private void Attack(GameObject enemy)
+  // 计算应该打的敌人个数
+  private void CountAttackEnemyNum()
   {
-    GameObject bullet = GameObject.Instantiate(bulletPrefab, firePosition.position, firePosition.rotation);
+    attackEnemyCount = 0;
+    // 先计算阻挡
+    if (blockEnemies.Count > 0)
+    {
+      if (blockEnemies.Count < runningData.attributes.attackNum)
+      {
+        attackEnemyCount = blockEnemies.Count;
+        if (enemies.Count < runningData.attributes.attackNum - attackEnemyCount)
+          attackEnemyCount += enemies.Count;
+        else attackEnemyCount = runningData.attributes.attackNum;// 满了
+      }
+      else attackEnemyCount = runningData.attributes.attackNum;// 满了
+    }
+    else
+    {
+      if (enemies.Count < runningData.attributes.attackNum)
+        attackEnemyCount = enemies.Count;
+      else attackEnemyCount = runningData.attributes.attackNum;// 满了
+    }
+  }
+  private void Attack(GameObject target)
+  {
+    switch (runningData.perfabSetting.bullet1.bulletType)
+    {
+      case BulletType.NONE:
+        target.GetComponent<CharManager>().GetDamage(CauseDamage(), runningData.damageType);
+        break;
+      case BulletType.TRAJECTORY:
+        CreateLaser(firePosition, target);
+        target.GetComponent<CharManager>().GetDamage(CauseDamage(), runningData.damageType);
+        break;
+      default:
+        CreateBullet(target);
+        break;
+    }
+  }
+  private void CreateBullet(GameObject target)
+  {
+    GameObject bullet = GameObject.Instantiate(bulletPrefab, firePosition.position, Quaternion.identity);
+    object[] message = new object[] { runningData, target };
     bullet.SetActive(true);
-    object[] message = new object[] { runningData, enemy };
     bullet.SendMessage("InitBullet", message);
+  }
+  private void CreateLaser(Transform firePosition, GameObject target)
+  {
+    GameObject laser = GameObject.Instantiate(laserPerfab, firePosition.position, Quaternion.identity);
+    Object[] message = new Object[] { firePosition, target, range };
+    laser.SetActive(true);
+    laser.SendMessage("InitLaser", message);
+  }
+  private float CauseDamage()
+  {
+    return runningData.attributes.atk;
   }
   public void GetDamage(float damage, DamageType damageType)
   {
@@ -287,20 +311,13 @@ public class CharManager : MonoBehaviour
     }
     Destroy(this.gameObject);
   }
+
   void OnDestroy()
   {
     if (originalData.isEnemy)
       GameManager.options.countEnemyAlive--;
   }
-  void SetOpt(object[] obj)
-  {
-    perfab = (GameObject)obj[0];
-    originalData = (CharcterData)obj[1];
-    InitCharManager();
-    gameObject.GetComponent<SphereCollider>().enabled = true;
-    gameObject.GetComponent<SphereCollider>().isTrigger = false;
-  }
-  void CountDamage(float damage, DamageType damageType)
+  private void CountDamage(float damage, DamageType damageType)
   {
     float finalDamage = 0;
     if (damageType == DamageType.Physical)
@@ -314,6 +331,14 @@ public class CharManager : MonoBehaviour
     runningData.attributes.maxHp -= finalDamage;
   }
 
+  void SetOpt(object[] obj)
+  {
+    perfab = (GameObject)obj[0];
+    originalData = (CharcterData)obj[1];
+    InitCharManager();
+    gameObject.GetComponent<SphereCollider>().enabled = true;
+    gameObject.GetComponent<SphereCollider>().isTrigger = false;
+  }
   // 敌人生命周期开始处
   void SetEnemy(object[] obj)
   {
@@ -327,7 +352,6 @@ public class CharManager : MonoBehaviour
     // 敌人一开始是隐藏状态
     perfab.SetActive(false);
   }
-
 
   private void CountDistanceToEnd()
   {
@@ -375,12 +399,21 @@ public class CharManager : MonoBehaviour
       {
         head = child.gameObject.transform;
       }
-      else if (child.gameObject.name == "Bullet")
+      else if (child.gameObject.name == "Bullet1")
+      {
+        child.gameObject.SetActive(false);
+      }
+      else if (child.gameObject.name == "Bullet2")
       {
         bulletPrefab = child.gameObject;
+        bulletPrefab.SetActive(false);
+      }
+      else if (child.gameObject.name == "Laser")
+      {
+        laserPerfab = child.gameObject;
+        laserPerfab.SetActive(false);
       }
     }
-    bulletPrefab.SetActive(false);
   }
 
   private void BlockStart()
