@@ -76,7 +76,7 @@ public class GameData
 
     eD[0].attributes.moveSpeed = 0.5f;
     eD[0].attributes.def = 600;
-    eD[0].attributes.range = 10;
+    eD[0].attributes.rangeRadius = 10;
 
     eD[0].perfabSetting.canMove = true;
     eD[0].perfabSetting.bullet1.hasEffect = false;
@@ -94,7 +94,7 @@ public class GameData
     oD[0].attributes.baseSearchTime = 0;
     oD[0].attributes.baseAttackTime = 2.8f;
     oD[0].attributes.baseAttackForwardTime = 1f;
-    oD[0].damageType = DamageType.Magic;
+    oD[0].attributes.damageType = DamageType.Magic;
     oD[0].attributes.maxBlockCnt = 2;
     oD[0].attributes.attackNum = 1;
 

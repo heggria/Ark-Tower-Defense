@@ -4,33 +4,40 @@
 [System.Serializable]
 public class BuffTrigger {
   /**
-   * 时间有关，以帧为单位
+   * 时间有关
    */
-  private TriggerType triggerType;
-  private TriggerCondition triggerCondition;
-  private int effectTime;
-  private int duration;
-  private int triggerTime;
-  private int updataTime;
+  public TriggerType triggerType;
+  public TriggerCondition triggerCondition;
+  public float timer1 = 0;
+  public float timer2 = 0;// 小循环使用
+  public float waitTime = 0;// 等待时间
+  public float sleepTime = 0;// 休眠时间
+  public float duration = 10;// 持续时间
+  public float updateTime = 0;// 激活时间
 
+  public float triggerTime = 0;// 累计时间
+  public int countTimes = 0;// 累计次数
+  public int count = 0;// 累计次数
 
-  public BuffTrigger(TriggerType type, TriggerCondition condition, int effectTime, int duration, int triggerTime, int updataTime){
+  /*
+  public BuffTrigger(TriggerType type, TriggerCondition condition, int effectTime, int duration, int triggerTime, int updateTime){
     this.triggerType = type;
     this.triggerCondition = condition;
     this.effectTime = effectTime;
     this.duration = duration;
     this.triggerTime = triggerTime;
-    this.updataTime = updataTime;
-  }
+    this.updateTime = updateTime;
+  }*/
 }
-// 触发类型，1只触发一次，2持续触发不累计，3持续触发累计
+// 触发类型，只触发一次，间隔触发，持续触发不累计，持续触发累计
 public enum TriggerType{
-  Once,
-  Continuous,
-  Cumulative
+  ONCE,
+  INTERVAL,
+  CONTINUOUS,
+  CUMULATIVE
 }
 // 触发条件，0无条件，1攻击，2受到攻击
 // TODO
 public enum TriggerCondition{
-  None
+  NONE
 }

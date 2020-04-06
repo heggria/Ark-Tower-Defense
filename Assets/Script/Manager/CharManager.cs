@@ -12,6 +12,8 @@ public class CharManager : MonoBehaviour
   [HideInInspector]
   public CharcterData runningData;// 运行数据
 
+  public BuffManager buffManager = new BuffManager();// buff管理器
+
   public bool hpSilderDisplay = true;
 
   public GameObject hpSilder;// 血条
@@ -52,7 +54,7 @@ public class CharManager : MonoBehaviour
   void Update()
   {
     // 设置攻击范围
-    range.SetRadius(runningData.attributes.range);
+    range.SetRadius(runningData.attributes.rangeRadius);
     if (originalData != null)
     {
       if (originalData.perfabSetting.canAtk)
@@ -262,11 +264,11 @@ public class CharManager : MonoBehaviour
     switch (runningData.perfabSetting.bullet1.bulletType)
     {
       case BulletType.NONE:
-        target.GetComponent<CharManager>().GetDamage(CauseDamage(), runningData.damageType);
+        target.GetComponent<CharManager>().GetDamage(CauseDamage(), runningData.attributes.damageType);
         break;
       case BulletType.TRAJECTORY:
         CreateLaser(firePosition, target);
-        target.GetComponent<CharManager>().GetDamage(CauseDamage(), runningData.damageType);
+        target.GetComponent<CharManager>().GetDamage(CauseDamage(), runningData.attributes.damageType);
         break;
       default:
         CreateBullet(target);
@@ -293,10 +295,10 @@ public class CharManager : MonoBehaviour
   }
   public void GetDamage(float damage, DamageType damageType)
   {
-    if (runningData.attributes.maxHp <= 0) return;
+    if (runningData.attributes.nowHp <= 0) return;
     CountDamage(damage, damageType);
-    SetHpSilder(runningData.attributes.maxHp / originalData.attributes.maxHp, true);
-    if (runningData.attributes.maxHp <= 0)
+    SetHpSilder(runningData.attributes.nowHp / originalData.attributes.maxHp, true);
+    if (runningData.attributes.nowHp <= 0)
       Die();
   }
   private void Die()
@@ -328,7 +330,7 @@ public class CharManager : MonoBehaviour
     if (finalDamage < 0.05f * damage)
       finalDamage = 0.05f * damage;
     //Debug.Log(finalDamage);
-    runningData.attributes.maxHp -= finalDamage;
+    runningData.attributes.nowHp -= finalDamage;
   }
 
   void SetOpt(object[] obj)
@@ -351,6 +353,7 @@ public class CharManager : MonoBehaviour
     endPos3d = Math.Ve2ToVe3(route.endPosition * GameManager.space, GameManager.enemyHeight);
     // 敌人一开始是隐藏状态
     perfab.SetActive(false);
+    gameObject.GetComponent<SphereCollider>().radius = 1;
   }
 
   private void CountDistanceToEnd()
@@ -388,7 +391,7 @@ public class CharManager : MonoBehaviour
     // 绑定范围敌人数组
     enemies = range.enemies;
     // 血条组件已经初始化，可以直接调用
-    SetHpSilder(runningData.attributes.maxHp / originalData.attributes.maxHp, true);
+    SetHpSilder(runningData.attributes.nowHp / originalData.attributes.maxHp, true);
     foreach (Transform child in perfab.GetComponentsInChildren<Transform>(true))
     {
       if (child.gameObject.name == "FirePosition")
@@ -412,7 +415,16 @@ public class CharManager : MonoBehaviour
       {
         laserPerfab = child.gameObject;
         laserPerfab.SetActive(false);
-      }
+      }/*
+      else if (child.gameObject.name == "Collider")
+      {
+        if(originalData.isEnemy)
+        child.gameObject.GetComponent<Rigidbody>().constraints =
+        RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezePositionZ;
+        else
+        child.gameObject.GetComponent<Rigidbody>().constraints =
+        RigidbodyConstraints.FreezePositionZ;
+      }*/
     }
   }
 
@@ -445,7 +457,7 @@ public class CharManager : MonoBehaviour
           if (blockStatus == BlockStatus.BLOCKING)
             return;
           // 如果不是阻挡状态，判断能不能阻挡，干员当前阻挡-敌人最大阻挡大于 0
-          else if (other.runningData.attributes.supplyBlockCnt - runningData.attributes.maxBlockCnt >= 0)
+          else if (other.runningData.attributes.maxBlockCnt - runningData.attributes.maxBlockCnt >= 0)
           {
             BlockStart();
             blockEnemies.Add(col.GetComponent<Transform>().gameObject);
@@ -456,7 +468,7 @@ public class CharManager : MonoBehaviour
         else
         {
           // 判断能不能阻挡，干员当前阻挡-敌人最大阻挡大于 0
-          if (runningData.attributes.supplyBlockCnt - other.runningData.attributes.maxBlockCnt >= 0)
+          if (runningData.attributes.maxBlockCnt - other.runningData.attributes.maxBlockCnt >= 0)
           {
             //Debug.Log(other.runningData.attributes.supplyBlockCnt);
             BlockStart();

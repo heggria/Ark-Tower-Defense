@@ -21,8 +21,6 @@ public class CharcterData
   public DeployPlace deployPlace;
   // 攻击方式
   public AttackSytle attackSytle;
-  // 伤害类型
-  public DamageType damageType = DamageType.Physical;
 
   public Attributes attributes;
 
@@ -68,12 +66,6 @@ public enum AttackSytle{
   Melee,
   Remote,
   Special
-}
-
-public enum DamageType{
-  Physical,
-  Magic,
-  Real
 }
 
 public enum DeployPlace{

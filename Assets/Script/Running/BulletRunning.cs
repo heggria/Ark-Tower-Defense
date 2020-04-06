@@ -31,6 +31,7 @@ public class BulletRunning : MonoBehaviour
   {
     if (charRunningData != null)
     {
+      UpdateEnemy();
       switch (bullet.bulletType)
       {
         case BulletType.PROJECTILE:
@@ -86,6 +87,15 @@ public class BulletRunning : MonoBehaviour
     }
     Destroy(this.gameObject);
   }
+  private void UpdateEnemy()
+  {
+    List<int> emptyIndex = new List<int>();
+    for (int index = 0; index < hitEnemy.Count; index++)
+      if (hitEnemy[index] == null)
+        emptyIndex.Add(index);
+    for (int i = 0; i < emptyIndex.Count; i++)
+      hitEnemy.RemoveAt(emptyIndex[i] - i);
+  }
   private void damageTarget()
   {
     int flag = 0;
@@ -98,7 +108,7 @@ public class BulletRunning : MonoBehaviour
     }
     Debug.Log(flag);
     for (int i = 0; i < flag; i++)
-      hitEnemy[i].GetComponent<CharManager>().GetDamage(CauseDamage(), charRunningData.damageType);
+      hitEnemy[i].GetComponent<CharManager>().GetDamage(CauseDamage(), charRunningData.attributes.damageType);
     Die();
   }
   private float CauseDamage()
