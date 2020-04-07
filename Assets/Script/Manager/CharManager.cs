@@ -38,7 +38,6 @@ public class CharManager : MonoBehaviour
   private int attackEnemyCount = 0;
 
   // 敌人专用
-  [HideInInspector]
   private Route route;
   private Vector3 endPos3d;
   public float distanceToEnd = 0;
@@ -171,7 +170,7 @@ public class CharManager : MonoBehaviour
       }
     }
   }
-
+  // 移动状态机
   private void MoveStatusMachine()
   {
     moveTimer += Time.deltaTime;
@@ -259,6 +258,7 @@ public class CharManager : MonoBehaviour
       else attackEnemyCount = runningData.attributes.attackNum;// 满了
     }
   }
+  // 攻击
   private void Attack(GameObject target)
   {
     switch (runningData.perfabSetting.bullet1.bulletType)
@@ -275,6 +275,7 @@ public class CharManager : MonoBehaviour
         break;
     }
   }
+  // 生成子弹
   private void CreateBullet(GameObject target)
   {
     GameObject bullet = GameObject.Instantiate(bulletPrefab, firePosition.position, Quaternion.identity);
@@ -282,6 +283,7 @@ public class CharManager : MonoBehaviour
     bullet.SetActive(true);
     bullet.SendMessage("InitBullet", message);
   }
+  // 生成激光
   private void CreateLaser(Transform firePosition, GameObject target)
   {
     GameObject laser = GameObject.Instantiate(laserPerfab, firePosition.position, Quaternion.identity);
@@ -289,10 +291,12 @@ public class CharManager : MonoBehaviour
     laser.SetActive(true);
     laser.SendMessage("InitLaser", message);
   }
+  // 造成多少伤害
   private float CauseDamage()
   {
     return runningData.attributes.atk;
   }
+  // 接受伤害消息
   public void GetDamage(float damage, DamageType damageType)
   {
     if (runningData.attributes.nowHp <= 0) return;
@@ -301,24 +305,8 @@ public class CharManager : MonoBehaviour
     if (runningData.attributes.nowHp <= 0)
       Die();
   }
-  private void Die()
-  {
-    if (originalData.isEnemy)
-    {
-      GameManager.options.killEnemy++;
-    }
-    else
-    {
-      originalData.attributes.maxDeployCount++;
-    }
-    Destroy(this.gameObject);
-  }
 
-  void OnDestroy()
-  {
-    if (originalData.isEnemy)
-      GameManager.options.countEnemyAlive--;
-  }
+  // 计算伤害
   private void CountDamage(float damage, DamageType damageType)
   {
     float finalDamage = 0;
@@ -333,6 +321,13 @@ public class CharManager : MonoBehaviour
     runningData.attributes.nowHp -= finalDamage;
   }
 
+  // 更新血条
+  private void SetHpSilder(float hp, bool isActive)
+  {
+    hpSilder.GetComponent<Slider>().value = hp; ;
+    hpSilder.SetActive(isActive);
+  }
+  // 干员生命周期开始处
   void SetOpt(object[] obj)
   {
     perfab = (GameObject)obj[0];
@@ -355,33 +350,7 @@ public class CharManager : MonoBehaviour
     perfab.SetActive(false);
     gameObject.GetComponent<SphereCollider>().radius = 1;
   }
-
-  private void CountDistanceToEnd()
-  {
-    float temporary = 0;
-    if (nextPointIndex <= route.checkpoints.Count - 1)
-    {
-      temporary += (transform.position
-      - Math.Ve2ToVe3(route.checkpoints[nextPointIndex].position * GameManager.space, GameManager.enemyHeight)).sqrMagnitude;
-      for (int i = nextPointIndex; i < route.checkpoints.Count - 1; i++)
-      {
-        temporary += (Math.Ve2ToVe3(route.checkpoints[i].position * GameManager.space, GameManager.enemyHeight)
-         - Math.Ve2ToVe3(route.checkpoints[i + 1].position * GameManager.space, GameManager.enemyHeight)).sqrMagnitude;
-      }
-      temporary += (Math.Ve2ToVe3(route.checkpoints[route.checkpoints.Count - 1].position * GameManager.space, GameManager.enemyHeight)
-           - Math.Ve2ToVe3(route.endPosition * GameManager.space, GameManager.enemyHeight)).sqrMagnitude;
-    }
-    else
-      temporary += (transform.position
-           - Math.Ve2ToVe3(route.endPosition * GameManager.space, GameManager.enemyHeight)).sqrMagnitude;
-    distanceToEnd = temporary;
-    //Debug.Log(distanceToEnd);
-  }
-  private void SetHpSilder(float hp, bool isActive)
-  {
-    hpSilder.GetComponent<Slider>().value = hp; ;
-    hpSilder.SetActive(isActive);
-  }
+  // 共同的定义
   private void InitCharManager()
   {
     // runningData需要深拷贝
@@ -428,6 +397,7 @@ public class CharManager : MonoBehaviour
     }
   }
 
+  // 阻挡开始
   private void BlockStart()
   {
     if (attackStatus == AttackStatus.AFTER_ATTACK)
@@ -441,44 +411,7 @@ public class CharManager : MonoBehaviour
     }
     blockStatus = BlockStatus.BLOCKING;
   }
-
-  void OnTriggerEnter(Collider col)
-  {
-    if (col.tag == "Char")
-    {
-      // Debug.Log(originalData.isEnemy);
-      if (col.GetComponent<CharManager>().originalData.isEnemy != originalData.isEnemy)
-      {
-        CharManager other = col.GetComponent<CharManager>();
-        // 如果被触发者是敌人
-        if (originalData.isEnemy)
-        {
-          // 敌人如果处于阻挡状态，直接跳过
-          if (blockStatus == BlockStatus.BLOCKING)
-            return;
-          // 如果不是阻挡状态，判断能不能阻挡，干员当前阻挡-敌人最大阻挡大于 0
-          else if (other.runningData.attributes.maxBlockCnt - runningData.attributes.maxBlockCnt >= 0)
-          {
-            BlockStart();
-            blockEnemies.Add(col.GetComponent<Transform>().gameObject);
-            //Debug.Log(blockEnemies[0].GetComponent<CharManager>());
-            // 敌人阻挡数不用变
-          }
-        }
-        else
-        {
-          // 判断能不能阻挡，干员当前阻挡-敌人最大阻挡大于 0
-          if (runningData.attributes.maxBlockCnt - other.runningData.attributes.maxBlockCnt >= 0)
-          {
-            //Debug.Log(other.runningData.attributes.supplyBlockCnt);
-            BlockStart();
-            blockEnemies.Add(col.GetComponent<Transform>().gameObject);
-          }
-          // Debug.Log(blockEnemies.Count);
-        }
-      }
-    }
-  }
+  // 更新阻挡
   private void UpdateBlockEnemies()
   {
     // 移除死亡敌人
@@ -516,10 +449,90 @@ public class CharManager : MonoBehaviour
       }
     }
   }
+  // 取消阻挡消息
   void BlockCancel(Object[] obj)
   {
     blockEnemies = new List<GameObject>();
     blockStatus = BlockStatus.NONE;
+  }
+  // 阻挡相关
+  void OnTriggerEnter(Collider col)
+  {
+    if (col.tag == "Char")
+    {
+      // Debug.Log(originalData.isEnemy);
+      if (col.GetComponent<CharManager>().originalData.isEnemy != originalData.isEnemy)
+      {
+        CharManager other = col.GetComponent<CharManager>();
+        // 如果被触发者是敌人
+        if (originalData.isEnemy)
+        {
+          // 敌人如果处于阻挡状态，直接跳过
+          if (blockStatus == BlockStatus.BLOCKING)
+            return;
+          // 如果不是阻挡状态，判断能不能阻挡，干员当前阻挡-敌人最大阻挡大于 0
+          else if (other.runningData.attributes.maxBlockCnt - runningData.attributes.maxBlockCnt >= 0)
+          {
+            BlockStart();
+            blockEnemies.Add(col.GetComponent<Transform>().gameObject);
+            //Debug.Log(blockEnemies[0].GetComponent<CharManager>());
+            // 敌人阻挡数不用变
+          }
+        }
+        else
+        {
+          // 判断能不能阻挡，干员当前阻挡-敌人最大阻挡大于 0
+          if (runningData.attributes.maxBlockCnt - other.runningData.attributes.maxBlockCnt >= 0)
+          {
+            //Debug.Log(other.runningData.attributes.supplyBlockCnt);
+            BlockStart();
+            blockEnemies.Add(col.GetComponent<Transform>().gameObject);
+          }
+          // Debug.Log(blockEnemies.Count);
+        }
+      }
+    }
+  }
+
+  // 计算离终点距离
+  private void CountDistanceToEnd()
+  {
+    float temporary = 0;
+    if (nextPointIndex <= route.checkpoints.Count - 1)
+    {
+      temporary += (transform.position
+      - Math.Ve2ToVe3(route.checkpoints[nextPointIndex].position * GameManager.space, GameManager.enemyHeight)).sqrMagnitude;
+      for (int i = nextPointIndex; i < route.checkpoints.Count - 1; i++)
+      {
+        temporary += (Math.Ve2ToVe3(route.checkpoints[i].position * GameManager.space, GameManager.enemyHeight)
+         - Math.Ve2ToVe3(route.checkpoints[i + 1].position * GameManager.space, GameManager.enemyHeight)).sqrMagnitude;
+      }
+      temporary += (Math.Ve2ToVe3(route.checkpoints[route.checkpoints.Count - 1].position * GameManager.space, GameManager.enemyHeight)
+           - Math.Ve2ToVe3(route.endPosition * GameManager.space, GameManager.enemyHeight)).sqrMagnitude;
+    }
+    else
+      temporary += (transform.position
+           - Math.Ve2ToVe3(route.endPosition * GameManager.space, GameManager.enemyHeight)).sqrMagnitude;
+    distanceToEnd = temporary;
+    //Debug.Log(distanceToEnd);
+  }
+
+  private void Die()
+  {
+    if (originalData.isEnemy)
+    {
+      GameManager.options.killEnemy++;
+    }
+    else
+    {
+      originalData.attributes.maxDeployCount++;
+    }
+    Destroy(this.gameObject);
+  }
+  void OnDestroy()
+  {
+    if (originalData.isEnemy)
+      GameManager.options.countEnemyAlive--;
   }
 }
 public enum AttackStatus

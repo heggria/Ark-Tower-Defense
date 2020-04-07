@@ -9,6 +9,8 @@ public class Buff
   public BuffStatus buffStatus = BuffStatus.WAIT;
   // 改变的数值
   public List<Value> buffValue;
+  // 累加的数值，定义时需要和buffValue一一对应
+  public List<Value> buffValuePlus;
   // 触发器
   public BuffTrigger trigger;
   // buff作用的对象

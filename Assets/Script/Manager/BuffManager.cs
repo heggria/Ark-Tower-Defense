@@ -84,9 +84,10 @@ public class BuffManager
   // 累加buff专用
   private void UpdateBuff(Buff buff)
   {
-    //TODO
+    for(int i =0;i<buff.buffValue.Count;i++){
+      buff.buffValue[i].value += buff.buffValuePlus[i].value;
+    }
   }
-
   // 将所有buff进行计算，统计出总buff集合
   private List<ValueFormula> BuffSettlement()
   {
